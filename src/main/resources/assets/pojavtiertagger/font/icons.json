@@ -1,0 +1,60 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "pojavtiertagger:gamemodes/sword.png",
+      "ascent": 8,
+      "height": 8,
+      "chars": ["\uE000"]
+    },
+    {
+      "type": "bitmap",
+      "file": "pojavtiertagger:gamemodes/mace.png",
+      "ascent": 8,
+      "height": 8,
+      "chars": ["\uE001"]
+    },
+    {
+      "type": "bitmap",
+      "file": "pojavtiertagger:gamemodes/smp.png",
+      "ascent": 8,
+      "height": 8,
+      "chars": ["\uE002"]
+    },
+    {
+      "type": "bitmap",
+      "file": "pojavtiertagger:gamemodes/pot.png",
+      "ascent": 8,
+      "height": 8,
+      "chars": ["\uE003"]
+    },
+    {
+      "type": "bitmap",
+      "file": "pojavtiertagger:gamemodes/vanilla.png",
+      "ascent": 8,
+      "height": 8,
+      "chars": ["\uE004"]
+    },
+    {
+      "type": "bitmap",
+      "file": "pojavtiertagger:gamemodes/nethop.png",
+      "ascent": 8,
+      "height": 8,
+      "chars": ["\uE005"]
+    },
+    {
+      "type": "bitmap",
+      "file": "pojavtiertagger:gamemodes/uhc.png",
+      "ascent": 8,
+      "height": 8,
+      "chars": ["\uE006"]
+    },
+    {
+      "type": "bitmap",
+      "file": "pojavtiertagger:gamemodes/axe.png",
+      "ascent": 8,
+      "height": 8,
+      "chars": ["\uE007"]
+    }
+  ]
+}

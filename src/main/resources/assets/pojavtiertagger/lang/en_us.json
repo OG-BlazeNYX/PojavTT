@@ -1,0 +1,17 @@
+{
+  "pojavtiertagger.config.title": "Pojav Tier Tagger",
+  "pojavtiertagger.config.enabled": "Mod Enabled",
+  "pojavtiertagger.config.showIcons": "Show Gamemode Icons",
+  "pojavtiertagger.config.showInNametag": "Show Above Nametags",
+  "pojavtiertagger.config.showInTab": "Show In Tab List",
+  "pojavtiertagger.config.showInChat": "Show In Chat",
+  "pojavtiertagger.config.gamemode": "Gamemode",
+  "pojavtiertagger.config.highestMode": "Highest Tier Mode",
+  "pojavtiertagger.config.showOverall": "Show Overall Tier",
+  "pojavtiertagger.config.refresh": "Refresh Interval (min)",
+  "pojavtiertagger.config.bracket": "Use Brackets",
+  "pojavtiertagger.config.done": "Done",
+  "pojavtiertagger.keybind.cycle": "Cycle Gamemode",
+  "pojavtiertagger.keybind.category": "Pojav Tier Tagger",
+  "key.categories.pojavtiertagger": "Pojav Tier Tagger"
+}

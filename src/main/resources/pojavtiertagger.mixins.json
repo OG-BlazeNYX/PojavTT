@@ -1,0 +1,15 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.pojavtiers.tagger.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [],
+  "client": [
+    "PlayerEntityMixin",
+    "PlayerListHudMixin",
+    "ChatHudMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

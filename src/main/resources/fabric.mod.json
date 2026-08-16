@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "pojavtiertagger",
+  "version": "${version}",
+  "name": "Pojav Tier Tagger",
+  "description": "Displays players' Pojav PvP tiers (HT1-LT5) with gamemode icons above their heads, in tab and in chat. Pulls live data from the Pojav rankings API.",
+  "authors": [
+    "Blaze</>.exe"
+  ],
+  "contact": {
+    "homepage": "https://mmpvp-production-69db.up.railway.app/api/rankings"
+  },
+  "license": "MIT",
+  "icon": "assets/pojavtiertagger/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.pojavtiers.tagger.PojavTierTaggerClient"
+    ],
+    "modmenu": [
+      "com.pojavtiers.tagger.gui.ModMenuIntegration"
+    ]
+  },
+  "mixins": [
+    "pojavtiertagger.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": ">=1.21 <=1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "modmenu": "*"
+  }
+}
