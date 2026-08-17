@@ -24,6 +24,8 @@ public enum GameMode {
     NETHOP("NethOP", "Neth OP", '\uE005', 0x7D4A40),
     UHC("UHC", "UHC", '\uE006', 0xFF5555),
     AXE("Axe", "Axe", '\uE007', 0x55FF55),
+    CART("CART", "Cart", '\uE009', 0xFFFFFF),
+    DIA_SMP("DIA SMP", "Diamond SMP", '\uE00A', 0xFFFFFF),
 
     /** Generic fallback when only a best tier is known (no specific gamemode). */
     OVERALL("Overall", "Overall", '\uE008', 0xFFFFFF);
