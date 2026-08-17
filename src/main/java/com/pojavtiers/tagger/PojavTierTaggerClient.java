@@ -99,7 +99,7 @@ public class PojavTierTaggerClient implements ClientModInitializer {
                             return 1;
                         })
                         .then(ClientCommandManager.literal("refresh").executes(ctx -> {
-                            PojavTierManager.refreshNow();
+                            PojavTierManager.refreshNow(true);
                             feedback(ctx.getSource(), Text.literal("[Pojav] Refreshing rankings...")
                                     .formatted(Formatting.YELLOW));
                             return 1;
