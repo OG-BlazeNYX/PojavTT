@@ -49,16 +49,16 @@ public class PojavConfig {
 
     public static Map<String, Integer> defaultColors() {
         Map<String, Integer> m = new LinkedHashMap<>();
-        m.put("HT1", 0xFFFF55);
-        m.put("HT2", 0xFF7070);
-        m.put("HT3", 0xFF55FF);
-        m.put("HT4", 0x55FFFF);
-        m.put("HT5", 0x00AA00);
-        m.put("LT1", 0x55FF55);
-        m.put("LT2", 0x5555FF);
-        m.put("LT3", 0x0000AA);
-        m.put("LT4", 0xAAAAAA);
-        m.put("LT5", 0x555555);
+        m.put("HT1", 0xF5CE4D);
+        m.put("LT1", 0xF5CE4D);
+        m.put("HT2", 0xBFCDD6);
+        m.put("LT2", 0xBFCDD6);
+        m.put("HT3", 0xB06453);
+        m.put("LT3", 0xB06453);
+        m.put("HT4", 0xA0323D);
+        m.put("LT4", 0xA0323D);
+        m.put("HT5", 0xBCBBC1);
+        m.put("LT5", 0xBCBBC1);
         return m;
     }
 
