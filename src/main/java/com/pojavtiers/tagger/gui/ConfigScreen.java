@@ -80,7 +80,7 @@ public class ConfigScreen extends Screen {
         // manual refresh button
         addDrawableChild(ButtonWidget.builder(
                         Text.literal("Refresh now (" + PojavTierManager.size() + " loaded)"),
-                        b -> PojavTierManager.refreshNow())
+                        b -> PojavTierManager.refreshNow(true))
                 .dimensions(rightX, y, colW, rowH).build());
         y += rowH + gap + 6;
 
