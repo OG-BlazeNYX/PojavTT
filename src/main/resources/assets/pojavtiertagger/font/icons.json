@@ -55,6 +55,20 @@
       "ascent": 8,
       "height": 8,
       "chars": ["\uE007"]
+    },
+    {
+      "type": "bitmap",
+      "file": "pojavtiertagger:gamemodes/cart.png",
+      "ascent": 8,
+      "height": 8,
+      "chars": ["\uE009"]
+    },
+    {
+      "type": "bitmap",
+      "file": "pojavtiertagger:gamemodes/diamond_smp.png",
+      "ascent": 8,
+      "height": 8,
+      "chars": ["\uE00A"]
     }
   ]
 }
