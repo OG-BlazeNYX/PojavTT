@@ -67,18 +67,26 @@ public final class PojavTierManager {
     }
 
     public static void refreshNow() {
-        if (!fetching.compareAndSet(false, true)) return;
+        refreshNow(false);
+    }
+
+    /** @param announce if true, always sends a chat result (success/failure) - used for manual refreshes. */
+    public static void refreshNow(boolean announce) {
+        if (!fetching.compareAndSet(false, true)) {
+            if (announce) notifyPlayer("§e[Pojav] A refresh is already in progress...");
+            return;
+        }
         lastAttemptMillis = System.currentTimeMillis();
 
         EXEC.submit(() -> {
             try {
                 String body = Http.get(API_URL);
-                ingest(body);
+                ingest(body, announce);
                 failureStreak = 0;
             } catch (Exception e) {
-                if (failureStreak == 0) {
+                if (failureStreak == 0 || announce) {
                     LOGGER.warn("Failed to fetch Pojav rankings from {} : {}", API_URL, e.toString());
-                    notifyPlayer("§c[Pojav] Could not load tiers — retrying every minute…");
+                    notifyPlayer("§c[Pojav] Could not load tiers: " + e);
                 } else if (failureStreak % 20 == 0) {
                     LOGGER.warn("Still failing to fetch Pojav rankings ({} attempts): {}",
                             failureStreak, e.toString());
@@ -99,7 +107,7 @@ public final class PojavTierManager {
         });
     }
 
-    private static void ingest(String body) {
+    private static void ingest(String body, boolean announce) {
         try {
             JsonArray playersArray = JsonParser.parseString(body).getAsJsonArray();
 
@@ -138,19 +146,22 @@ public final class PojavTierManager {
             loaded = true;
             cacheVersion++;
             LOGGER.info("Loaded {} Pojav player rankings", CACHE.size());
-            if (firstLoad) {
+            if (firstLoad || announce) {
                 notifyPlayer("§a[Pojav] Loaded " + CACHE.size() + " player tiers!");
             }
         } catch (Exception e) {
             LOGGER.warn("Failed to parse Pojav rankings", e);
+            if (announce) {
+                notifyPlayer("§c[Pojav] Failed to parse server response: " + e);
+            }
         }
     }
 
     /**
      * Scans {@code pr.ranks} for the highest-scoring tier (per {@link #tierPoints})
-     * among gamemodes that map to a known {@link GameMode} (so the badge icon always
-     * matches a real texture), and fills in {@code pr.bestTier} / {@code pr.bestGameMode}.
-     * Unrecognized keys (e.g. "CART", "DIA SMP") are skipped since there's no icon for them.
+     * among gamemodes that map to a known {@link GameMode}, and fills in
+     * {@code pr.bestTier} / {@code pr.bestGameMode}. Unrecognized keys not covered
+     * by {@link GameMode#fromKey} are skipped since there's no icon for them.
      */
     private static void computeBest(PlayerRanking pr) {
         if (pr.ranks == null || pr.ranks.isEmpty()) return;
@@ -239,8 +250,10 @@ public final class PojavTierManager {
         MutableText badge = Text.empty();
 
         if (cfg.showIcons) {
+            // No external tint on the gamemode icon - render at neutral white (0xFFFFFF)
+            // so the texture's own native colors show through unaltered.
             badge.append(Text.literal(String.valueOf(dt.mode().iconChar()))
-                    .setStyle(CompatUtil.withFontCompat(Style.EMPTY, ICON_FONT).withColor(dt.mode().iconColor())));
+                    .setStyle(CompatUtil.withFontCompat(Style.EMPTY, ICON_FONT).withColor(0xFFFFFF)));
             badge.append(Text.literal(" "));
         }
 
