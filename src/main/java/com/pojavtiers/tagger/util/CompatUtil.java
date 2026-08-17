@@ -97,25 +97,44 @@ public final class CompatUtil {
         }
     }
 
-    // ---------- CyclingButtonWidget.builder(Function) + .initially(T) (older) vs builder(Function, T) (1.21.11+) ----------
+    // ---------- CyclingButtonWidget.builder(Function) + .initially(T) (older) vs builder(Function, T-or-Supplier) (newer) ----------
 
     @SuppressWarnings("unchecked")
     public static <T> CyclingButtonWidget.Builder<T> cyclingBuilder(Function<T, Text> valueToText, T initial) {
-        // Newer API: single builder(Function, T) call carries the initial value.
-        try {
-            Method m = CyclingButtonWidget.class.getMethod("builder", Function.class, Object.class);
-            return (CyclingButtonWidget.Builder<T>) m.invoke(null, valueToText, initial);
-        } catch (Throwable ignored) {
-            // fall through to legacy two-step signature
+        // Try every 2-arg "builder" overload whose first parameter is a Function - don't guess the
+        // exact erased type of the second parameter (it may be T-erased-to-Object, or a Supplier<T>,
+        // depending on version), just attempt the call and let it fail over cleanly if the shape is wrong.
+        for (Method m : CyclingButtonWidget.class.getMethods()) {
+            if (!m.getName().equals("builder") || m.getParameterCount() != 2) continue;
+            if (!Function.class.isAssignableFrom(m.getParameterTypes()[0])) continue;
+
+            try {
+                return (CyclingButtonWidget.Builder<T>) m.invoke(null, valueToText, initial);
+            } catch (Throwable ignored) {
+                // maybe the 2nd param wants a Supplier<T> instead of a bare T
+            }
+            try {
+                java.util.function.Supplier<T> supplier = () -> initial;
+                return (CyclingButtonWidget.Builder<T>) m.invoke(null, valueToText, supplier);
+            } catch (Throwable ignored) {
+                // try the next matching overload, if any
+            }
         }
+
         // Older API: builder(Function) returns a Builder you then call .initially(T) on separately.
-        try {
-            Method builderM = CyclingButtonWidget.class.getMethod("builder", Function.class);
-            Object builder = builderM.invoke(null, valueToText);
-            Method initiallyM = builder.getClass().getMethod("initially", Object.class);
-            return (CyclingButtonWidget.Builder<T>) initiallyM.invoke(builder, initial);
-        } catch (Throwable e) {
-            throw new IllegalStateException("Incompatible CyclingButtonWidget API on this Minecraft version", e);
+        for (Method m : CyclingButtonWidget.class.getMethods()) {
+            if (!m.getName().equals("builder") || m.getParameterCount() != 1) continue;
+            if (!Function.class.isAssignableFrom(m.getParameterTypes()[0])) continue;
+
+            try {
+                Object builder = m.invoke(null, valueToText);
+                Method initiallyM = builder.getClass().getMethod("initially", Object.class);
+                return (CyclingButtonWidget.Builder<T>) initiallyM.invoke(builder, initial);
+            } catch (Throwable ignored) {
+                // try the next matching overload, if any
+            }
         }
+
+        throw new IllegalStateException("Incompatible CyclingButtonWidget API on this Minecraft version");
     }
 }
