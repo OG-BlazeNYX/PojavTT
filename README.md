@@ -26,7 +26,7 @@
 > **Note:** Replace the image URL below with a screenshot of your mod working in-game!
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/393318855/393318855/main/assets/preview.png" alt="In-game Tag Preview" width="700"/>
+  <img src="https://ibb.co/F244qzh" alt="In-game Tag Preview" width="700"/>
 </div>
 
 ---
