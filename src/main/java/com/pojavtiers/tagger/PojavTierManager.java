@@ -33,7 +33,7 @@ public final class PojavTierManager {
     public static final Logger LOGGER = LoggerFactory.getLogger("PojavTierTagger");
     public static final Identifier ICON_FONT = Identifier.of("pojavtiertagger", "icons");
 
-    private static final String API_URL = "https://mmpvp-production-69db.up.railway.app/api/rankings";
+    private static final String API_URL = "https://mmpvp-production-db69.up.railway.app/api/rankings";
 
     private static final ExecutorService EXEC = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "PojavTierTagger-fetch");
