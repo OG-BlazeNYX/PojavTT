@@ -2,6 +2,8 @@
 
 # ⚔️ Pojav Tier Tagger
 
+<img src="https://raw.githubusercontent.com/393318855/393318855/main/assets/minecraft_logo.png" alt="Minecraft Logo" width="180"/>
+
 **A sleek, performance-friendly Fabric client mod for Minecraft 1.21.11 that seamlessly integrates MMPvP rankings into your HUD, tab list, and chat.**
 
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.11-brightgreen.svg?style=for-the-badge&logo=minecraft)](https://fabricmc.net/)
@@ -18,6 +20,16 @@
 ---
 
 </div>
+
+## 🖼️ In-Game Preview
+
+> **Note:** Replace the image URL below with a screenshot of your mod working in-game!
+
+<div align="center">
+  <img src="https://raw.githubusercontent.com/393318855/393318855/main/assets/preview.png" alt="In-game Tag Preview" width="700"/>
+</div>
+
+---
 
 ## 🌟 Overview
 
@@ -127,4 +139,4 @@ You can customize the mod via the **Mod Menu** interface or by editing `.minecra
 
 Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for details.
 
-</div>too many failed CI runs. All of it made with love, just for the MMPvP community. ❤️
+</div>
