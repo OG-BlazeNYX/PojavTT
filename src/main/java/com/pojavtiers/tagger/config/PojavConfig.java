@@ -47,26 +47,26 @@ public class PojavConfig {
     // --- colours, keyed by tier code (HT1..LT5) as 0xRRGGBB ints ---
     public Map<String, Integer> tierColors = defaultColors();
 
-    // Bumped once to force existing configs (saved with the old default
-    // palette) onto the new "classic" tier palette. Not touched again
-    // after this so future user edits to tierColors are preserved.
+    // Bumped each time the default tier palette changes, to force existing
+    // configs (saved with an older default palette) onto the new one. Not
+    // touched again after that so future user edits to tierColors are preserved.
     private int colorPaletteVersion = 0;
-    private static final int CURRENT_PALETTE_VERSION = 1;
+    private static final int CURRENT_PALETTE_VERSION = 2;
 
-    // Colors copied 1:1 from the "classic" tier palette in the Tiers mod
-    // (assets/minecraft/colors/classic.json - ht1..lt5 keys).
+    // Colors copied 1:1 from the "mctiers" tier palette in the Tiers mod
+    // (assets/minecraft/colors/mctiers.json - ht1..lt5 keys).
     public static Map<String, Integer> defaultColors() {
         Map<String, Integer> m = new LinkedHashMap<>();
-        m.put("HT1", 0xFF0000);
-        m.put("LT1", 0xFFB6C1);
-        m.put("HT2", 0xFFA500);
-        m.put("LT2", 0xFFE4B5);
-        m.put("HT3", 0xDAA520);
-        m.put("LT3", 0xEEE8AA);
-        m.put("HT4", 0x006400);
-        m.put("LT4", 0x90EE90);
-        m.put("HT5", 0x808080);
-        m.put("LT5", 0xD3D3D3);
+        m.put("HT1", 0xE8BA3A);
+        m.put("LT1", 0xD5B355);
+        m.put("HT2", 0xC4D3E7);
+        m.put("LT2", 0xA0A7B2);
+        m.put("HT3", 0xF89F5A);
+        m.put("LT3", 0xC67B42);
+        m.put("HT4", 0x81749A);
+        m.put("LT4", 0x655B79);
+        m.put("HT5", 0x8F82A8);
+        m.put("LT5", 0x655B79);
         return m;
     }
 
