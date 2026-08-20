@@ -77,7 +77,8 @@ public final class CompatUtil {
 
     public static KeyBinding createKeyBinding(String translationKey, InputUtil.Type type, int code,
                                                String modId, String categoryPath, String legacyCategoryTranslationKey) {
-        // Newer API: 4th constructor arg is a KeyBinding.Category, obtained via KeyBinding.Category.create(Identifier).
+        // Newer API (as of ~1.21.9): 4th constructor arg is a KeyBinding.Category, obtained via
+        // KeyBinding.Category.create(Identifier).
         try {
             Class<?> categoryClass = Class.forName("net.minecraft.client.option.KeyBinding$Category");
             Method create = categoryClass.getMethod("create", Identifier.class);
@@ -85,56 +86,153 @@ public final class CompatUtil {
             Constructor<?> ctor = KeyBinding.class.getConstructor(String.class, InputUtil.Type.class, int.class, categoryClass);
             return (KeyBinding) ctor.newInstance(translationKey, type, code, category);
         } catch (Throwable ignored) {
-            // fall through to legacy signature
+            // fall through
         }
         // Older API: 4th constructor arg is a plain String category translation key.
         try {
             Constructor<?> ctor = KeyBinding.class.getConstructor(String.class, InputUtil.Type.class, int.class, String.class);
             return (KeyBinding) ctor.newInstance(translationKey, type, code, legacyCategoryTranslationKey);
-        } catch (Throwable e) {
-            LOGGER.warn("Could not register keybinding on this Minecraft version", e);
-            return null;
+        } catch (Throwable ignored) {
+            // fall through to a generic scan - the two hardcoded shapes above didn't match this build
         }
+
+        // Generic fallback: scan every public constructor for one shaped
+        // (String, <assignable from InputUtil.Type>, int, <anything>) and try to
+        // satisfy the 4th argument regardless of its concrete type.
+        for (Constructor<?> ctor : KeyBinding.class.getConstructors()) {
+            Class<?>[] p = ctor.getParameterTypes();
+            if (p.length != 4) continue;
+            if (p[0] != String.class) continue;
+            if (!InputUtil.Type.class.isAssignableFrom(p[1]) && p[1] != InputUtil.Type.class) continue;
+            if (p[2] != int.class && p[2] != Integer.class) continue;
+
+            Class<?> categoryParam = p[3];
+            for (Object candidate : candidateCategoryValues(categoryParam, modId, categoryPath, legacyCategoryTranslationKey)) {
+                try {
+                    KeyBinding kb = (KeyBinding) ctor.newInstance(translationKey, type, code, candidate);
+                    LOGGER.info("Registered keybinding '{}' via generic constructor scan (category param type: {})",
+                            translationKey, categoryParam.getName());
+                    return kb;
+                } catch (Throwable ignored) {
+                    // try next candidate
+                }
+            }
+        }
+
+        LOGGER.warn("Could not register keybinding '{}' on this Minecraft version - no matching KeyBinding "
+                + "constructor found. Available constructors: {}", translationKey,
+                java.util.Arrays.toString(KeyBinding.class.getConstructors()));
+        return null;
+    }
+
+    /** Builds a list of plausible values to pass as the KeyBinding constructor's 4th (category) argument. */
+    private static java.util.List<Object> candidateCategoryValues(Class<?> categoryParam, String modId,
+                                                                    String categoryPath, String legacyKey) {
+        java.util.List<Object> candidates = new java.util.ArrayList<>();
+        if (categoryParam == String.class) {
+            candidates.add(legacyKey);
+            candidates.add(categoryPath);
+            return candidates;
+        }
+        Identifier id = Identifier.of(modId, categoryPath);
+        if (categoryParam == Identifier.class) {
+            candidates.add(id);
+            return candidates;
+        }
+        // Try a static factory method that takes an Identifier: create(Identifier), of(Identifier), etc.
+        for (String factoryName : new String[]{"create", "of", "getOrCreate"}) {
+            try {
+                Method m = categoryParam.getMethod(factoryName, Identifier.class);
+                candidates.add(m.invoke(null, id));
+            } catch (Throwable ignored) {
+                // try next
+            }
+        }
+        // Try a public constructor of the category type that takes an Identifier.
+        try {
+            Constructor<?> c = categoryParam.getConstructor(Identifier.class);
+            candidates.add(c.newInstance(id));
+        } catch (Throwable ignored) {
+            // try next
+        }
+        return candidates;
     }
 
     // ---------- CyclingButtonWidget.builder(Function) + .initially(T) (older) vs builder(Function, T-or-Supplier) (newer) ----------
 
     @SuppressWarnings("unchecked")
     public static <T> CyclingButtonWidget.Builder<T> cyclingBuilder(Function<T, Text> valueToText, T initial) {
-        // Try every 2-arg "builder" overload whose first parameter is a Function - don't guess the
-        // exact erased type of the second parameter (it may be T-erased-to-Object, or a Supplier<T>,
-        // depending on version), just attempt the call and let it fail over cleanly if the shape is wrong.
-        for (Method m : CyclingButtonWidget.class.getMethods()) {
-            if (!m.getName().equals("builder") || m.getParameterCount() != 2) continue;
-            if (!Function.class.isAssignableFrom(m.getParameterTypes()[0])) continue;
+        java.util.List<String> attemptLog = new java.util.ArrayList<>();
 
-            try {
-                return (CyclingButtonWidget.Builder<T>) m.invoke(null, valueToText, initial);
-            } catch (Throwable ignored) {
-                // maybe the 2nd param wants a Supplier<T> instead of a bare T
+        // Try every "builder" overload whose first parameter is a Function, regardless of how many
+        // parameters it has in total - don't guess the exact erased type of any parameter beyond the
+        // first, just attempt plausible calls and let them fail over cleanly if the shape is wrong.
+        for (Method m : CyclingButtonWidget.class.getMethods()) {
+            if (!m.getName().equals("builder")) continue;
+            Class<?>[] params = m.getParameterTypes();
+            if (params.length == 0 || !Function.class.isAssignableFrom(params[0])) continue;
+
+            if (params.length == 2) {
+                try {
+                    return (CyclingButtonWidget.Builder<T>) m.invoke(null, valueToText, initial);
+                } catch (Throwable t) {
+                    attemptLog.add("builder(Function, T) with bare value: " + rootCause(t));
+                }
+                try {
+                    java.util.function.Supplier<T> supplier = () -> initial;
+                    return (CyclingButtonWidget.Builder<T>) m.invoke(null, valueToText, supplier);
+                } catch (Throwable t) {
+                    attemptLog.add("builder(Function, T) with Supplier: " + rootCause(t));
+                }
+            } else if (params.length == 1) {
+                try {
+                    Object builder = m.invoke(null, valueToText);
+                    CyclingButtonWidget.Builder<T> result = tryInitially(builder, initial, attemptLog);
+                    if (result != null) return result;
+                } catch (Throwable t) {
+                    attemptLog.add("builder(Function) then initially(): " + rootCause(t));
+                }
             }
+        }
+
+        LOGGER.warn("Incompatible CyclingButtonWidget API on this Minecraft version - none of the {} "
+                        + "attempted call shapes matched. Attempts: {}. Available 'builder' methods: {}",
+                attemptLog.size(), attemptLog, availableBuilderMethods());
+        throw new IllegalStateException("Incompatible CyclingButtonWidget API on this Minecraft version");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> CyclingButtonWidget.Builder<T> tryInitially(Object builder, T initial, java.util.List<String> attemptLog) {
+        for (Method initiallyM : builder.getClass().getMethods()) {
+            if (!initiallyM.getName().equals("initially") || initiallyM.getParameterCount() != 1) continue;
+            try {
+                return (CyclingButtonWidget.Builder<T>) initiallyM.invoke(builder, initial);
+            } catch (Throwable t) {
+                attemptLog.add("initially(" + initiallyM.getParameterTypes()[0].getSimpleName() + "): " + rootCause(t));
+            }
+            // maybe it wants a Supplier<T> instead of a bare T
             try {
                 java.util.function.Supplier<T> supplier = () -> initial;
-                return (CyclingButtonWidget.Builder<T>) m.invoke(null, valueToText, supplier);
+                return (CyclingButtonWidget.Builder<T>) initiallyM.invoke(builder, supplier);
             } catch (Throwable ignored) {
-                // try the next matching overload, if any
+                // continue scanning
             }
         }
+        return null;
+    }
 
-        // Older API: builder(Function) returns a Builder you then call .initially(T) on separately.
+    private static String rootCause(Throwable t) {
+        Throwable c = t;
+        while (c.getCause() != null) c = c.getCause();
+        return c.getClass().getSimpleName() + (c.getMessage() != null ? ": " + c.getMessage() : "");
+    }
+
+    private static String availableBuilderMethods() {
+        StringBuilder sb = new StringBuilder();
         for (Method m : CyclingButtonWidget.class.getMethods()) {
-            if (!m.getName().equals("builder") || m.getParameterCount() != 1) continue;
-            if (!Function.class.isAssignableFrom(m.getParameterTypes()[0])) continue;
-
-            try {
-                Object builder = m.invoke(null, valueToText);
-                Method initiallyM = builder.getClass().getMethod("initially", Object.class);
-                return (CyclingButtonWidget.Builder<T>) initiallyM.invoke(builder, initial);
-            } catch (Throwable ignored) {
-                // try the next matching overload, if any
-            }
+            if (!m.getName().equals("builder")) continue;
+            sb.append(m).append("; ");
         }
-
-        throw new IllegalStateException("Incompatible CyclingButtonWidget API on this Minecraft version");
+        return sb.toString();
     }
 }
