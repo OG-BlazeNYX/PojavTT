@@ -47,18 +47,26 @@ public class PojavConfig {
     // --- colours, keyed by tier code (HT1..LT5) as 0xRRGGBB ints ---
     public Map<String, Integer> tierColors = defaultColors();
 
+    // Bumped once to force existing configs (saved with the old default
+    // palette) onto the new "classic" tier palette. Not touched again
+    // after this so future user edits to tierColors are preserved.
+    private int colorPaletteVersion = 0;
+    private static final int CURRENT_PALETTE_VERSION = 1;
+
+    // Colors copied 1:1 from the "classic" tier palette in the Tiers mod
+    // (assets/minecraft/colors/classic.json - ht1..lt5 keys).
     public static Map<String, Integer> defaultColors() {
         Map<String, Integer> m = new LinkedHashMap<>();
-        m.put("HT1", 0xF5CE4D);
-        m.put("LT1", 0xF5CE4D);
-        m.put("HT2", 0xBFCDD6);
-        m.put("LT2", 0xBFCDD6);
-        m.put("HT3", 0xB06453);
-        m.put("LT3", 0xB06453);
-        m.put("HT4", 0xA0323D);
-        m.put("LT4", 0xA0323D);
-        m.put("HT5", 0xBCBBC1);
-        m.put("LT5", 0xBCBBC1);
+        m.put("HT1", 0xFF0000);
+        m.put("LT1", 0xFFB6C1);
+        m.put("HT2", 0xFFA500);
+        m.put("LT2", 0xFFE4B5);
+        m.put("HT3", 0xDAA520);
+        m.put("LT3", 0xEEE8AA);
+        m.put("HT4", 0x006400);
+        m.put("LT4", 0x90EE90);
+        m.put("HT5", 0x808080);
+        m.put("LT5", 0xD3D3D3);
         return m;
     }
 
@@ -86,6 +94,12 @@ public class PojavConfig {
                     if (cfg != null) {
                         if (cfg.tierColors == null || cfg.tierColors.isEmpty()) {
                             cfg.tierColors = defaultColors();
+                        }
+                        if (cfg.colorPaletteVersion < CURRENT_PALETTE_VERSION) {
+                            // One-time migration onto the new "classic" palette.
+                            cfg.tierColors = defaultColors();
+                            cfg.colorPaletteVersion = CURRENT_PALETTE_VERSION;
+                            cfg.save();
                         }
                         if (cfg.gamemode == null) cfg.gamemode = GameMode.SWORD;
                         if (cfg.highestMode == null) cfg.highestMode = HighestMode.IF_NONE;
