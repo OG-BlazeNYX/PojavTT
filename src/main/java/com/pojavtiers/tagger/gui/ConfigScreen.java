@@ -41,29 +41,32 @@ public class ConfigScreen extends Screen {
         // throwing out of init() and leaving the whole screen with no buttons at all.
 
         // Row 1: enabled / icons
+        final int row1Y = y;
         safeAdd("enabled", () -> CyclingButtonWidget.onOffBuilder(cfg.enabled)
-                .build(leftX, y, colW, rowH, Text.translatable("pojavtiertagger.config.enabled"),
+                .build(leftX, row1Y, colW, rowH, Text.translatable("pojavtiertagger.config.enabled"),
                         (b, v) -> cfg.enabled = v));
         safeAdd("showIcons", () -> CyclingButtonWidget.onOffBuilder(cfg.showIcons)
-                .build(rightX, y, colW, rowH, Text.translatable("pojavtiertagger.config.showIcons"),
+                .build(rightX, row1Y, colW, rowH, Text.translatable("pojavtiertagger.config.showIcons"),
                         (b, v) -> cfg.showIcons = v));
         y += rowH + gap;
 
         // Row 2: nametag / tab
+        final int row2Y = y;
         safeAdd("showInNametag", () -> CyclingButtonWidget.onOffBuilder(cfg.showInNametag)
-                .build(leftX, y, colW, rowH, Text.translatable("pojavtiertagger.config.showInNametag"),
+                .build(leftX, row2Y, colW, rowH, Text.translatable("pojavtiertagger.config.showInNametag"),
                         (b, v) -> cfg.showInNametag = v));
         safeAdd("showInTab", () -> CyclingButtonWidget.onOffBuilder(cfg.showInTab)
-                .build(rightX, y, colW, rowH, Text.translatable("pojavtiertagger.config.showInTab"),
+                .build(rightX, row2Y, colW, rowH, Text.translatable("pojavtiertagger.config.showInTab"),
                         (b, v) -> cfg.showInTab = v));
         y += rowH + gap;
 
         // Row 3: chat / brackets
+        final int row3Y = y;
         safeAdd("showInChat", () -> CyclingButtonWidget.onOffBuilder(cfg.showInChat)
-                .build(leftX, y, colW, rowH, Text.translatable("pojavtiertagger.config.showInChat"),
+                .build(leftX, row3Y, colW, rowH, Text.translatable("pojavtiertagger.config.showInChat"),
                         (b, v) -> cfg.showInChat = v));
         safeAdd("useBrackets", () -> CyclingButtonWidget.onOffBuilder(cfg.useBrackets)
-                .build(rightX, y, colW, rowH, Text.translatable("pojavtiertagger.config.bracket"),
+                .build(rightX, row3Y, colW, rowH, Text.translatable("pojavtiertagger.config.bracket"),
                         (b, v) -> cfg.useBrackets = v));
         y += rowH + gap;
 
