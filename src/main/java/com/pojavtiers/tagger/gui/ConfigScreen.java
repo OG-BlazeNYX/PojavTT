@@ -9,11 +9,15 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.CyclingButtonWidget;
 import net.minecraft.text.Text;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A self-contained vanilla-widget config screen (no Cloth Config dependency).
  */
 public class ConfigScreen extends Screen {
+    private static final Logger LOGGER = LoggerFactory.getLogger("PojavTierTagger/ConfigScreen");
+
     private final Screen parent;
     private final PojavConfig cfg = PojavConfig.get();
 
@@ -31,62 +35,80 @@ public class ConfigScreen extends Screen {
         int rightX = this.width / 2 + gap / 2;
         int y = 40;
 
+        // Every row below is wrapped in safeAdd() so that if ONE widget fails to
+        // build on a given Minecraft version (e.g. a CyclingButtonWidget API
+        // mismatch), it just skips that single button and logs why, instead of
+        // throwing out of init() and leaving the whole screen with no buttons at all.
+
         // Row 1: enabled / icons
-        addDrawableChild(CyclingButtonWidget.onOffBuilder(cfg.enabled)
+        safeAdd("enabled", () -> CyclingButtonWidget.onOffBuilder(cfg.enabled)
                 .build(leftX, y, colW, rowH, Text.translatable("pojavtiertagger.config.enabled"),
                         (b, v) -> cfg.enabled = v));
-        addDrawableChild(CyclingButtonWidget.onOffBuilder(cfg.showIcons)
+        safeAdd("showIcons", () -> CyclingButtonWidget.onOffBuilder(cfg.showIcons)
                 .build(rightX, y, colW, rowH, Text.translatable("pojavtiertagger.config.showIcons"),
                         (b, v) -> cfg.showIcons = v));
         y += rowH + gap;
 
         // Row 2: nametag / tab
-        addDrawableChild(CyclingButtonWidget.onOffBuilder(cfg.showInNametag)
+        safeAdd("showInNametag", () -> CyclingButtonWidget.onOffBuilder(cfg.showInNametag)
                 .build(leftX, y, colW, rowH, Text.translatable("pojavtiertagger.config.showInNametag"),
                         (b, v) -> cfg.showInNametag = v));
-        addDrawableChild(CyclingButtonWidget.onOffBuilder(cfg.showInTab)
+        safeAdd("showInTab", () -> CyclingButtonWidget.onOffBuilder(cfg.showInTab)
                 .build(rightX, y, colW, rowH, Text.translatable("pojavtiertagger.config.showInTab"),
                         (b, v) -> cfg.showInTab = v));
         y += rowH + gap;
 
         // Row 3: chat / brackets
-        addDrawableChild(CyclingButtonWidget.onOffBuilder(cfg.showInChat)
+        safeAdd("showInChat", () -> CyclingButtonWidget.onOffBuilder(cfg.showInChat)
                 .build(leftX, y, colW, rowH, Text.translatable("pojavtiertagger.config.showInChat"),
                         (b, v) -> cfg.showInChat = v));
-        addDrawableChild(CyclingButtonWidget.onOffBuilder(cfg.useBrackets)
+        safeAdd("useBrackets", () -> CyclingButtonWidget.onOffBuilder(cfg.useBrackets)
                 .build(rightX, y, colW, rowH, Text.translatable("pojavtiertagger.config.bracket"),
                         (b, v) -> cfg.useBrackets = v));
         y += rowH + gap;
 
         // Row 4: gamemode (cycling)
-        addDrawableChild(CompatUtil.<GameMode>cyclingBuilder(g -> Text.literal(g.displayName()), cfg.gamemode)
+        final int gamemodeY = y;
+        safeAdd("gamemode", () -> CompatUtil.<GameMode>cyclingBuilder(g -> Text.literal(g.displayName()), cfg.gamemode)
                 .values(GameMode.values())
-                .build(leftX, y, colW, rowH, Text.translatable("pojavtiertagger.config.gamemode"),
+                .build(leftX, gamemodeY, colW, rowH, Text.translatable("pojavtiertagger.config.gamemode"),
                         (b, v) -> cfg.gamemode = v));
         // highest mode
-        addDrawableChild(CompatUtil.<PojavConfig.HighestMode>cyclingBuilder(m -> Text.literal(label(m)), cfg.highestMode)
+        safeAdd("highestMode", () -> CompatUtil.<PojavConfig.HighestMode>cyclingBuilder(m -> Text.literal(label(m)), cfg.highestMode)
                 .values(PojavConfig.HighestMode.values())
-                .build(rightX, y, colW, rowH, Text.translatable("pojavtiertagger.config.highestMode"),
+                .build(rightX, gamemodeY, colW, rowH, Text.translatable("pojavtiertagger.config.highestMode"),
                         (b, v) -> cfg.highestMode = v));
         y += rowH + gap;
 
         // Row 5: refresh interval (cycling presets)
         Integer[] intervals = {5, 10, 15, 30, 60};
         Integer current = nearest(cfg.refreshIntervalMinutes, intervals);
-        addDrawableChild(CompatUtil.<Integer>cyclingBuilder(i -> Text.literal(i + " min"), current)
+        final int refreshY = y;
+        safeAdd("refreshInterval", () -> CompatUtil.<Integer>cyclingBuilder(i -> Text.literal(i + " min"), current)
                 .values(intervals)
-                .build(leftX, y, colW, rowH, Text.translatable("pojavtiertagger.config.refresh"),
+                .build(leftX, refreshY, colW, rowH, Text.translatable("pojavtiertagger.config.refresh"),
                         (b, v) -> cfg.refreshIntervalMinutes = v));
-        // manual refresh button
-        addDrawableChild(ButtonWidget.builder(
+        // manual refresh button (plain ButtonWidget - not affected by the cycling-button compat issue)
+        safeAdd("refreshNowButton", () -> ButtonWidget.builder(
                         Text.literal("Refresh now (" + PojavTierManager.size() + " loaded)"),
                         b -> PojavTierManager.refreshNow(true))
-                .dimensions(rightX, y, colW, rowH).build());
+                .dimensions(rightX, refreshY, colW, rowH).build());
         y += rowH + gap + 6;
 
         // Done
-        addDrawableChild(ButtonWidget.builder(Text.translatable("pojavtiertagger.config.done"), b -> close())
-                .dimensions(this.width / 2 - 100, y, 200, rowH).build());
+        final int doneY = y;
+        safeAdd("done", () -> ButtonWidget.builder(Text.translatable("pojavtiertagger.config.done"), b -> close())
+                .dimensions(this.width / 2 - 100, doneY, 200, rowH).build());
+    }
+
+    /** Builds and adds a widget, catching and logging any failure instead of aborting the whole screen init. */
+    private void safeAdd(String rowName, java.util.function.Supplier<net.minecraft.client.gui.widget.ClickableWidget> factory) {
+        try {
+            addDrawableChild(factory.get());
+        } catch (Throwable t) {
+            LOGGER.warn("Could not build config screen widget '{}' on this Minecraft version - skipping it. "
+                    + "Other buttons will still work.", rowName, t);
+        }
     }
 
     private static String label(PojavConfig.HighestMode m) {
