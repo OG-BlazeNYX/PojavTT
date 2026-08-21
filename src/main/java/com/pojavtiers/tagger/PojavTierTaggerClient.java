@@ -16,10 +16,10 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 public class PojavTierTaggerClient implements ClientModInitializer {
@@ -30,17 +30,11 @@ public class PojavTierTaggerClient implements ClientModInitializer {
     public void onInitializeClient() {
         PojavConfig.get(); // load config
 
-        KeyBinding binding = CompatUtil.createKeyBinding(
-                "pojavtiertagger.keybind.cycle",
-                InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_UNKNOWN,
-                MOD_ID,
-                "pojavtiertagger",
-                "key.categories.pojavtiertagger"
-        );
-        if (binding != null) {
-            cycleKey = KeyBindingHelper.registerKeyBinding(binding);
-        }
+        // Direct, proven-correct on 1.21.11 (see CompatUtil's class comment for why
+        // this used to be reflection and why that was actually the bug).
+        KeyBinding.Category category = KeyBinding.Category.create(Identifier.of(MOD_ID));
+        KeyBinding binding = new KeyBinding("pojavtiertagger.keybind.cycle", GLFW.GLFW_KEY_UNKNOWN, category);
+        cycleKey = KeyBindingHelper.registerKeyBinding(binding);
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> PojavTierManager.refreshNow());
 
