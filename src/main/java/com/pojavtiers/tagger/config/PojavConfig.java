@@ -36,10 +36,23 @@ public class PojavConfig {
     public boolean showInChat = true;
     public boolean useBrackets = false;
 
-    // --- behaviour (currently ignored – the API now returns only best_tier) ---
+    // --- behaviour: which gamemode's tier to show, and how to fall back when
+    // that gamemode has no rank for a given player ---
     public GameMode gamemode = GameMode.SWORD;
     public HighestMode highestMode = HighestMode.IF_NONE;
     public int refreshIntervalMinutes = 30;
+
+    public enum TierPosition {
+        LEFT, RIGHT
+    }
+
+    // --- optional second tier badge, shown alongside the primary one ---
+    public boolean secondaryTierEnabled = false;
+    public GameMode secondaryGamemode = GameMode.MACE;
+    // Which side of the player name the secondary badge renders on. The
+    // primary badge always renders on the opposite side (LEFT stays adjacent
+    // to the name as before when secondary is RIGHT, and vice versa).
+    public TierPosition secondaryPosition = TierPosition.RIGHT;
 
     // --- separator between the tier badge and the name ---
     public String separator = " | ";
@@ -96,13 +109,15 @@ public class PojavConfig {
                             cfg.tierColors = defaultColors();
                         }
                         if (cfg.colorPaletteVersion < CURRENT_PALETTE_VERSION) {
-                            // One-time migration onto the new "classic" palette.
+                            // Forces existing configs onto the current default palette.
                             cfg.tierColors = defaultColors();
                             cfg.colorPaletteVersion = CURRENT_PALETTE_VERSION;
                             cfg.save();
                         }
                         if (cfg.gamemode == null) cfg.gamemode = GameMode.SWORD;
                         if (cfg.highestMode == null) cfg.highestMode = HighestMode.IF_NONE;
+                        if (cfg.secondaryGamemode == null) cfg.secondaryGamemode = GameMode.MACE;
+                        if (cfg.secondaryPosition == null) cfg.secondaryPosition = TierPosition.RIGHT;
                         return cfg;
                     }
                 }
