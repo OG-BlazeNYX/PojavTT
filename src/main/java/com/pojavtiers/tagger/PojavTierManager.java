@@ -162,8 +162,11 @@ public final class PojavTierManager {
      * among gamemodes that map to a known {@link GameMode}, and fills in
      * {@code pr.bestTier} / {@code pr.bestGameMode}. Unrecognized keys not covered
      * by {@link GameMode#fromKey} are skipped since there's no icon for them.
+     * <p>
+     * Public so {@code DemoProfile} can compute the same fields for its
+     * bundled offline mannequin data.
      */
-    private static void computeBest(PlayerRanking pr) {
+    public static void computeBest(PlayerRanking pr) {
         if (pr.ranks == null || pr.ranks.isEmpty()) return;
 
         String bestTier = null;
@@ -216,11 +219,35 @@ public final class PojavTierManager {
 
     /** Returns the player's single best tier, with the icon of whichever gamemode earned it. */
     public static DisplayedTier resolve(String username) {
-        PlayerRanking pr = lookup(username);
-        if (pr == null || pr.bestTier == null) return null;
+        return resolveForMode(lookup(username), PojavConfig.get().gamemode);
+    }
 
+    /**
+     * Resolves the tier to show for a specific selected gamemode, honoring
+     * {@link PojavConfig.HighestMode}:
+     * <ul>
+     *   <li>{@code ALWAYS} - always show the player's overall best tier, regardless of {@code selected}.</li>
+     *   <li>{@code IF_NONE} - show {@code selected}'s tier if the player has one, otherwise fall back to their best tier.</li>
+     *   <li>{@code NEVER} - show {@code selected}'s tier if present, otherwise show nothing.</li>
+     * </ul>
+     */
+    public static DisplayedTier resolveForMode(PlayerRanking pr, GameMode selected) {
+        if (pr == null || selected == null) return null;
+        PojavConfig.HighestMode hm = PojavConfig.get().highestMode;
+
+        if (hm != PojavConfig.HighestMode.ALWAYS) {
+            String tier = pr.getTier(selected);
+            if (tier != null) return new DisplayedTier(selected, tier);
+            if (hm == PojavConfig.HighestMode.NEVER) return null;
+        }
+
+        if (pr.bestTier == null) return null;
         GameMode mode = pr.bestGameMode != null ? pr.bestGameMode : GameMode.OVERALL;
         return new DisplayedTier(mode, pr.bestTier);
+    }
+
+    public static DisplayedTier resolveForMode(String username, GameMode selected) {
+        return resolveForMode(lookup(username), selected);
     }
 
     /** Points awarded for a tier code (PojavTiers scoring). */
@@ -264,12 +291,45 @@ public final class PojavTierManager {
     }
 
     public static Text appendTier(String username, Text original) {
-        DisplayedTier dt = resolve(username);
-        if (dt == null) return original;
+        PlayerRanking pr = lookup(username);
+        if (pr == null) return original;
+        return buildCombinedTag(pr, original);
+    }
 
-        MutableText result = buildBadge(dt);
-        result.append(Text.literal(PojavConfig.get().separator).formatted(Formatting.GRAY));
-        result.append(original);
+    /**
+     * Builds the primary badge, optionally combined with the secondary badge on
+     * whichever side {@link PojavConfig#secondaryPosition} says, around {@code nameNode}.
+     * Shared by the live nametag/tab/chat paths and by the config screen's
+     * offline mannequin preview ({@code DemoProfile}), so toggling either tier's
+     * gamemode or the secondary tier's side always renders identically in both places.
+     */
+    public static MutableText buildCombinedTag(PlayerRanking pr, Text nameNode) {
+        PojavConfig cfg = PojavConfig.get();
+        DisplayedTier primary = resolveForMode(pr, cfg.gamemode);
+        DisplayedTier secondary = cfg.secondaryTierEnabled ? resolveForMode(pr, cfg.secondaryGamemode) : null;
+
+        MutableText result = Text.empty();
+        if (primary == null && secondary == null) {
+            result.append(nameNode);
+            return result;
+        }
+
+        boolean secondaryOnLeft = secondary != null && cfg.secondaryPosition == PojavConfig.TierPosition.LEFT;
+        boolean secondaryOnRight = secondary != null && cfg.secondaryPosition == PojavConfig.TierPosition.RIGHT;
+
+        if (secondaryOnLeft) {
+            result.append(buildBadge(secondary));
+            result.append(Text.literal(cfg.separator).formatted(Formatting.GRAY));
+        }
+        if (primary != null) {
+            result.append(buildBadge(primary));
+            result.append(Text.literal(cfg.separator).formatted(Formatting.GRAY));
+        }
+        result.append(nameNode);
+        if (secondaryOnRight) {
+            result.append(Text.literal(cfg.separator).formatted(Formatting.GRAY));
+            result.append(buildBadge(secondary));
+        }
         return result;
     }
 
@@ -306,14 +366,8 @@ public final class PojavTierManager {
 
         MutableText rebuilt;
         if (!trimmed.isEmpty() && names.contains(trimmed)) {
-            DisplayedTier dt = resolve(trimmed);
-            if (dt != null) {
-                rebuilt = buildBadge(dt);
-                rebuilt.append(Text.literal(PojavConfig.get().separator).formatted(Formatting.GRAY));
-                rebuilt.append(self);
-            } else {
-                rebuilt = self;
-            }
+            PlayerRanking pr = lookup(trimmed);
+            rebuilt = (pr != null) ? buildCombinedTag(pr, self) : self;
         } else {
             rebuilt = self;
         }
